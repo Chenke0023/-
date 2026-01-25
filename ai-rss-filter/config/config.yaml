@@ -1,0 +1,62 @@
+# 全局配置
+global:
+  data_dir: "./data"
+  data_retention_days: 90
+  cache:
+    memory_enabled: true
+    file_enabled: true
+    db_enabled: true
+    memory_ttl: 3600
+    file_ttl: 86400
+    db_ttl: 604800
+
+# LLM 配置
+llm:
+  default_provider: "openai"
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    base_url: "https://ai.hybgzs.com/v1"
+    model: "gemini-3-flash-preview"
+
+# Web 服务配置
+web:
+  host: "0.0.0.0"
+  port: 8000
+
+# RSS 组配置
+groups:
+  news_filter:
+    urls:
+      - "https://contraryresearch.substack.com/feed"
+      - "https://www.newsletter.datadrivenvc.io/feed"
+      - "https://seekingalpha.com/tag/editors-picks.xml"
+      - "https://icemancapital.substack.com/feed"
+      - "https://www.ft.com/rss/home"
+      - "https://www.levervc.com/feed/"
+      - "https://mbideepdives.substack.com/feed"
+      - "http://www.technologyreview.com/rss/rss.aspx"
+      - "https://www.newcomer.co/feed"
+      - "https://cdn.feedcontrol.net/8/1114-wioSIX3uu8MEj.xml"
+      - "https://svrgn.substack.com/feed"
+      - "https://www.speedwellmemos.com/feed"
+      - "https://techcrunch.com/feed/"
+      - "https://feeds.content.dowjones.io/public/rss/RSSWSJD"
+      - "https://attackcapital.substack.com/feed"
+      - "https://ritholtz.com/feed/rss"
+      - "https://thegeneralist.substack.com/feed"
+      - "https://www.thelastbearstanding.com/feed"
+      - "https://newsletter.tidalwaveresearch.com/feed"
+      - "http://blog.validea.com/feed/"
+      - "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain"
+      - "https://www.appinn.com/feed/"
+      - "https://sspai.com/feed"
+      - "https://bloombergnew.buzzing.cc/feed.xml"
+    interval: 60
+    deduplication:
+      enabled: true
+      days: 3
+    filter:
+      enabled: true
+      prompt: "只保留与以下主题相关的新闻：Social networking（社交网络）、live streaming（直播）、TMT acquisitions（TMT并购）、mobile gaming（手机游戏）。请仔细分析新闻标题和内容，判断是否与这些主题有直接或间接的关联。"
+    summary:
+      enabled: false

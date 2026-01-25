@@ -1,0 +1,15 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+
+# Local databases / caches
+ai-rss-filter/data/
+ai-rss-filter/data/cache/
+*.db
+
+# Generated outputs
+filtered_news_*.json
+相关新闻_*.md

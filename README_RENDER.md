@@ -52,7 +52,7 @@ git push -u origin main
 4. 填入你的 API Key:
 
 ```
-sk-EjDBhZm5xTqkXfe_ea_iIUpuls7IUT5ZmTTufteiR5qlyHwCO6l0k3Kh1oE
+<your_openai_api_key>
 ```
 
 5. 保存更改

@@ -8,9 +8,12 @@ from datetime import datetime, timedelta
 import feedparser
 from openai import OpenAI
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'sk-EjDBhZm5xTqkXfe_ea_iIUpuls7IUT5ZmTTufteiR5qlyHwCO6l0k3Kh1oE')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://ai.hybgzs.com/v1')
 MODEL_NAME = os.getenv('MODEL_NAME', 'gemini-3-flash-preview')
+
+if not OPENAI_API_KEY:
+    raise ValueError('OPENAI_API_KEY environment variable is required')
 
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '50'))
 BATCH_DELAY = int(os.getenv('BATCH_DELAY', '10'))

@@ -9,7 +9,7 @@ builder = "nixpacks/builder:v1"
   startCommand = "python3 -u batch_process.py"
 
 [env]
-  "OPENAI_API_KEY" = "sk-EjDBhZm5xTqkXfe_ea_iIUpuls7IUT5ZmTTufteiR5qlyHwCO6l0k3Kh1oE"
+  "OPENAI_API_KEY" = "${OPENAI_API_KEY}"
   "OPENAI_BASE_URL" = "https://ai.hybgzs.com/v1"
   "MODEL_NAME" = "gemini-3-flash-preview"
   "BATCH_SIZE" = "50"

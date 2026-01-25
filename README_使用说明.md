@@ -101,7 +101,7 @@ docker-compose up -d
 
 - **API URL**: https://ai.hybgzs.com/v1
 - **模型**: gemini-3-flash-preview
-- **API Key**: sk-EjDBhZm5xTqkXfe...（已配置）
+- **API Key**: <your_openai_api_key>
 
 ## 📋 过滤主题
 

@@ -4,13 +4,17 @@
 import sqlite3
 import json
 import time
+import os
 from datetime import datetime
 from openai import OpenAI
 
-DB_PATH = "/Users/a1-6/Downloads/新闻抓取脚本/ai-rss-filter/data/rss_data.db"
-API_URL = 'https://ai.hybgzs.com/v1'
-API_KEY = 'sk-EjDBhZm5xTqkXfe_ea_iIUpuls7IUT5ZmTTufteiR5qlyHwCO6l0k3Kh1oE'
-MODEL = 'gemini-3-flash-preview'
+DB_PATH = os.getenv("DB_PATH", "./ai-rss-filter/data/rss_data.db")
+API_URL = os.getenv("OPENAI_BASE_URL", "https://ai.hybgzs.com/v1")
+API_KEY = os.getenv("OPENAI_API_KEY")
+MODEL = os.getenv("MODEL_NAME", "gemini-3-flash-preview")
+
+if not API_KEY:
+    raise ValueError("OPENAI_API_KEY 环境变量未设置")
 
 def is_relevant_with_llm(title, summary, client):
     prompt = f"""请判断以下新闻是否与这些主题相关：Social networking（社交网络）、live streaming（直播）、TMT acquisitions（TMT并购）、mobile gaming（手机游戏）。

@@ -125,7 +125,7 @@ Railway 项目文件可以：
 Railway 项目会自动读取以下环境变量（已在 `railway.toml` 中配置）：
 
 ```
-OPENAI_API_KEY          = sk-EjDBhZm5xTqkXfe_ea_iIUpuls7IUT5ZmTTufteiR5qlyHwCO6l0k3Kh1oE
+OPENAI_API_KEY          = <your_openai_api_key>
 OPENAI_BASE_URL         = https://api.hybgzs.com/v1
 MODEL_NAME             = gemini-3-flash-preview
 BATCH_SIZE             = 50

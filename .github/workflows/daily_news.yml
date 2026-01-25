@@ -1,0 +1,68 @@
+name: Daily News Filter
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # 09:00 Asia/Shanghai
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run filter
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL || 'https://ai.hybgzs.com/v1' }}
+          MODEL_NAME: ${{ secrets.MODEL_NAME || 'gemini-3-flash-preview' }}
+          BATCH_SIZE: ${{ secrets.BATCH_SIZE || '50' }}
+          BATCH_DELAY: ${{ secrets.BATCH_DELAY || '10' }}
+          REQUEST_DELAY: ${{ secrets.REQUEST_DELAY || '0.2' }}
+        run: python batch_process_railway.py
+
+      - name: Pick output files
+        id: out
+        shell: bash
+        run: |
+          set -euo pipefail
+          md=$(ls -1t 相关新闻_*.md | head -n 1)
+          js=$(ls -1t filtered_news_*.json | head -n 1)
+          echo "md=$md" >> "$GITHUB_OUTPUT"
+          echo "json=$js" >> "$GITHUB_OUTPUT"
+
+      - name: Send email
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM || secrets.SMTP_USER }}
+        run: |
+          python scripts/send_email.py \
+            --subject "Daily News Filter Result" \
+            --body "See attachments: ${{ steps.out.outputs.md }} / ${{ steps.out.outputs.json }}" \
+            --attach "${{ steps.out.outputs.md }}" \
+            --attach "${{ steps.out.outputs.json }}"
+
+      - name: Upload artifacts (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: news-result
+          path: |
+            ${{ steps.out.outputs.md }}
+            ${{ steps.out.outputs.json }}

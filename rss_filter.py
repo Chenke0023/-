@@ -8,15 +8,15 @@ from typing import List, Dict
 from urllib.parse import urlparse
 import feedparser
 from openai import OpenAI
-from dotenv import load_dotenv
-
-load_dotenv()
 
 feedparser.USER_AGENT = 'Mozilla/5.0 (compatible; RSS-Filter/1.0)'
 
-API_URL = 'https://ai.hybgzs.com/v1'
-API_KEY = 'sk-EjDBhZm5xTqkXfe_ea_iIUpuls7IUT5ZmTTufteiR5qlyHwCO6l0k3Kh1oE'
-MODEL = 'gemini-3-flash-preview'
+API_URL = os.getenv("OPENAI_BASE_URL", "https://ai.hybgzs.com/v1")
+API_KEY = os.getenv("OPENAI_API_KEY")
+MODEL = os.getenv("MODEL_NAME", "gemini-3-flash-preview")
+
+if not API_KEY:
+    raise ValueError("OPENAI_API_KEY 环境变量未设置")
 
 def get_rss_urls():
     try:

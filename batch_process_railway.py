@@ -18,6 +18,7 @@ if not OPENAI_API_KEY:
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '50'))
 BATCH_DELAY = int(os.getenv('BATCH_DELAY', '10'))
 REQUEST_DELAY = float(os.getenv('REQUEST_DELAY', '0.2'))
+CLASSIFY_BATCH_SIZE = int(os.getenv('CLASSIFY_BATCH_SIZE', '10'))
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 
@@ -65,37 +66,71 @@ def fetch_rss(url):
         print(f"  ❌ 抓取失败 {url}: {e}")
         return []
 
-def is_relevant_with_llm(title, summary, client):
-    prompt = f"""请判断以下新闻是否与这些主题相关：Social networking（社交网络）、live streaming（直播）、TMT acquisitions（TMT并购）、mobile gaming（手机游戏）。
+def classify_batch(items, client):
+    payload = []
+    for idx, it in enumerate(items, 1):
+        payload.append(
+            {
+                "id": idx,
+                "title": it.get("title", ""),
+                "summary": it.get("summary", "") or "无摘要",
+            }
+        )
 
-新闻标题: {title}
-新闻摘要: {summary if summary else '无摘要'}
+    instructions = (
+        "请判断以下每条新闻是否与这些主题相关："
+        "Social networking（社交网络）、live streaming（直播）、TMT acquisitions（TMT并购）、mobile gaming（手机游戏）。\n"
+        "请严格按顺序返回一个 JSON 数组，数组长度必须等于输入条目数。\n"
+        "数组元素只能是字符串 'YES' 或 'NO'，不要输出任何解释、代码块或多余文字。"
+    )
 
-请只回答 YES 或 NO，不需要解释。"""
+    prompt = f"{instructions}\n\n输入(JSON):\n{json.dumps(payload, ensure_ascii=False)}"
 
+    last_error = None
     for retry in range(MAX_RETRIES):
         try:
             response = client.chat.completions.create(
                 model=MODEL_NAME,
                 messages=[
                     {"role": "system", "content": "你是一个专业的内容过滤器，判断新闻是否与特定主题相关。"},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
-                max_tokens=10
+                max_tokens=max(50, 8 * len(items)),
             )
 
-            answer = response.choices[0].message.content.strip().upper()
-            return answer == "YES"
+            raw = response.choices[0].message.content.strip()
+            arr = json.loads(raw)
+            if not isinstance(arr, list) or len(arr) != len(items):
+                return [None for _ in items]
+
+            out = []
+            for v in arr:
+                if isinstance(v, str):
+                    u = v.strip().upper()
+                    if u == "YES":
+                        out.append(True)
+                        continue
+                    if u == "NO":
+                        out.append(False)
+                        continue
+                out.append(None)
+            return out
         except Exception as e:
+            last_error = str(e)
             if '429' in str(e) and retry < MAX_RETRIES - 1:
-                print(f"  ⏳ API 速率限制，等待 {RETRY_DELAY} 秒后重试... ({retry + 1}/{MAX_RETRIES})")
-                time.sleep(RETRY_DELAY)
+                sleep_s = RETRY_DELAY * (2 ** retry)
+                print(
+                    f"  ⏳ API 速率限制，等待 {sleep_s} 秒后重试... ({retry + 1}/{MAX_RETRIES})"
+                )
+                time.sleep(sleep_s)
                 continue
-            else:
-                print(f"  ❌ LLM 判断失败: {e}")
-                return False
-    return False
+
+            print(f"  ❌ LLM 判断失败: {e}")
+            return [None for _ in items]
+
+    print(f"  ❌ LLM 判断失败(多次重试后仍失败): {last_error}")
+    return [None for _ in items]
 
 def main():
     print("🚀 RSS 过滤器 Railway 版本启动中...\n")
@@ -140,6 +175,7 @@ def main():
 
     total_batches = (len(unique_entries) + BATCH_SIZE - 1) // BATCH_SIZE
     all_relevant = []
+    all_unknown = []
 
     for batch_num in range(total_batches):
         start_idx = batch_num * BATCH_SIZE
@@ -153,31 +189,69 @@ def main():
 
         batch_relevant = []
 
+        pending = []
         for i, entry in enumerate(batch_entries, start_idx + 1):
             title = entry.get('title', '')
             link = entry.get('link', '')
             published = entry.get('published', '')
             summary = entry.get('summary', '')[:200] if entry.get('summary') else ''
 
-            print(f"[{i}/{len(unique_entries)}] {title[:60]}...", end=" ")
+            pending.append(
+                {
+                    "i": i,
+                    "title": title,
+                    "link": link,
+                    "published": published,
+                    "summary": summary,
+                }
+            )
 
-            if is_relevant_with_llm(title, summary, client):
-                batch_relevant.append({
-                    'title': title,
-                    'link': link,
-                    'published': published,
-                    'summary': summary
-                })
-                print("✅ 相关")
-            else:
-                print("⏭️  不相关")
+            if len(pending) < CLASSIFY_BATCH_SIZE and i != end_idx:
+                continue
 
+            verdicts = classify_batch(
+                [{"title": p["title"], "summary": p["summary"]} for p in pending],
+                client,
+            )
+
+            for p, verdict in zip(pending, verdicts):
+                print(f"[{p['i']}/{len(unique_entries)}] {p['title'][:60]}...", end=" ")
+
+                if verdict is True:
+                    batch_relevant.append(
+                        {
+                            'title': p['title'],
+                            'link': p['link'],
+                            'published': p['published'],
+                            'summary': p['summary']
+                        }
+                    )
+                    print("✅ 相关")
+                elif verdict is False:
+                    print("⏭️  不相关")
+                else:
+                    all_unknown.append(
+                        {
+                            'title': p['title'],
+                            'link': p['link'],
+                            'published': p['published'],
+                            'summary': p['summary'],
+                            'llm_status': 'unknown'
+                        }
+                    )
+                    print("⚠️  未判断(速率限制)")
+
+            pending = []
             time.sleep(REQUEST_DELAY)
 
         all_relevant.extend(batch_relevant)
 
         print(f"\n✅ 本批次完成: 找到 {len(batch_relevant)} 条相关新闻")
-        print(f"📊 累计相关: {len(all_relevant)}/{len(unique_entries)} 条 ({len(all_relevant)/len(unique_entries)*100:.1f}%)\n")
+        denom = len(unique_entries) if len(unique_entries) else 1
+        print(f"📊 累计相关: {len(all_relevant)}/{len(unique_entries)} 条 ({len(all_relevant)/denom*100:.1f}%)")
+        if all_unknown:
+            print(f"⚠️  未能判断(速率限制等原因): {len(all_unknown)} 条")
+        print("")
 
         if batch_num < total_batches - 1:
             print(f"⏳ 等待 {BATCH_DELAY} 秒后继续下一批...\n")
@@ -192,6 +266,8 @@ def main():
     print(f"   - 总新闻数: {len(all_entries)}")
     print(f"   - 去重后: {len(unique_entries)}")
     print(f"   - 相关新闻: {len(all_relevant)}")
+    if all_unknown:
+        print(f"   - 未能判断: {len(all_unknown)}")
     print(f"   - 相关比例: {len(all_relevant)/len(unique_entries)*100:.2f}%")
 
     all_relevant.sort(key=lambda x: x['published'], reverse=True)
@@ -202,6 +278,7 @@ def main():
 **运行平台**: Railway
 **过滤主题**: Social networking（社交网络）、Live streaming（直播）、TMT acquisitions（TMT并购）、Mobile gaming（手机游戏）
 **相关新闻数量**: {len(all_relevant)} 条
+**未能判断数量**: {len(all_unknown)} 条
 **总新闻数**: {len(unique_entries)} 条
 **过滤比例**: {len(all_relevant)/len(unique_entries)*100:.2f}%
 
@@ -235,6 +312,7 @@ def main():
 | 总新闻数 | {len(all_entries)} 条 |
 | 去重后新闻 | {len(unique_entries)} 条 |
 | 相关新闻 | {len(all_relevant)} 条 |
+| 未能判断 | {len(all_unknown)} 条 |
 | 相关比例 | {len(all_relevant)/len(unique_entries)*100:.2f}% |
 | LLM 模型 | {MODEL_NAME} |
 | API 提供商 | {OPENAI_BASE_URL} |
@@ -250,16 +328,23 @@ def main():
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     json_file = f"filtered_news_{timestamp}.json"
+    unknown_json_file = f"unknown_news_{timestamp}.json"
     md_file = f"相关新闻_{timestamp}.md"
 
     with open(json_file, 'w', encoding='utf-8') as f:
         json.dump(all_relevant, f, ensure_ascii=False, indent=2)
+
+    if all_unknown:
+        with open(unknown_json_file, 'w', encoding='utf-8') as f:
+            json.dump(all_unknown, f, ensure_ascii=False, indent=2)
 
     with open(md_file, 'w', encoding='utf-8') as f:
         f.write(md_content)
 
     print(f"\n✅ 结果已保存:")
     print(f"   📄 JSON: {json_file}")
+    if all_unknown:
+        print(f"   📄 Unknown JSON: {unknown_json_file}")
     print(f"   📄 Markdown: {md_file}")
 
 if __name__ == "__main__":

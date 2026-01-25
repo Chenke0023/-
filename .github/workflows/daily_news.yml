@@ -42,8 +42,12 @@ jobs:
           set -euo pipefail
           md=$(ls -1t 相关新闻_*.md | head -n 1)
           js=$(ls -1t filtered_news_*.json | head -n 1)
+          unk=$(ls -1t unknown_news_*.json 2>/dev/null | head -n 1 || true)
           echo "md=$md" >> "$GITHUB_OUTPUT"
           echo "json=$js" >> "$GITHUB_OUTPUT"
+          if [ -n "$unk" ]; then
+            echo "unknown=$unk" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build issue body
         id: body
@@ -57,6 +61,8 @@ jobs:
 
           md_path = pathlib.Path(os.environ["MD_PATH"]).resolve()
           js_path = pathlib.Path(os.environ["JSON_PATH"]).resolve()
+          unk_raw = os.environ.get("UNKNOWN_PATH", "")
+          unk_path = pathlib.Path(unk_raw).resolve() if unk_raw else None
           md = md_path.read_text(encoding="utf-8", errors="replace")
 
           max_chars = 60000
@@ -64,11 +70,17 @@ jobs:
               md = md[:max_chars] + "\n\n... (truncated)\n"
 
           run_url = os.environ.get("RUN_URL", "")
+
+          unknown_line = ""
+          if unk_path and unk_path.exists():
+              unknown_line = f"- Unknown: `{unk_path.name}`\n"
+
           body = textwrap.dedent(f"""\
           Automated daily run finished.
 
           - Markdown: `{md_path.name}`
           - JSON: `{js_path.name}`
+          {unknown_line}- Run: {run_url}
           - Run: {run_url}
 
           ---
@@ -81,6 +93,7 @@ jobs:
         env:
           MD_PATH: ${{ steps.out.outputs.md }}
           JSON_PATH: ${{ steps.out.outputs.json }}
+          UNKNOWN_PATH: ${{ steps.out.outputs.unknown }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Create or update issue
@@ -112,6 +125,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: news-result
+          if-no-files-found: ignore
           path: |
             ${{ steps.out.outputs.md }}
             ${{ steps.out.outputs.json }}
+            unknown_news_*.json

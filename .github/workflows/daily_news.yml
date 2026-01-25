@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   run:
@@ -44,20 +45,68 @@ jobs:
           echo "md=$md" >> "$GITHUB_OUTPUT"
           echo "json=$js" >> "$GITHUB_OUTPUT"
 
-      - name: Send email
-        env:
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_TO: ${{ secrets.MAIL_TO }}
-          MAIL_FROM: ${{ secrets.MAIL_FROM || secrets.SMTP_USER }}
+      - name: Build issue body
+        id: body
+        shell: bash
         run: |
-          python scripts/send_email.py \
-            --subject "Daily News Filter Result" \
-            --body "See attachments: ${{ steps.out.outputs.md }} / ${{ steps.out.outputs.json }}" \
-            --attach "${{ steps.out.outputs.md }}" \
-            --attach "${{ steps.out.outputs.json }}"
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import textwrap
+
+          md_path = pathlib.Path(os.environ["MD_PATH"]).resolve()
+          js_path = pathlib.Path(os.environ["JSON_PATH"]).resolve()
+          md = md_path.read_text(encoding="utf-8", errors="replace")
+
+          max_chars = 60000
+          if len(md) > max_chars:
+              md = md[:max_chars] + "\n\n... (truncated)\n"
+
+          run_url = os.environ.get("RUN_URL", "")
+          body = textwrap.dedent(f"""\
+          Automated daily run finished.
+
+          - Markdown: `{md_path.name}`
+          - JSON: `{js_path.name}`
+          - Run: {run_url}
+
+          ---
+
+          {md}
+          """)
+
+          pathlib.Path("issue_body.txt").write_text(body, encoding="utf-8")
+          PY
+        env:
+          MD_PATH: ${{ steps.out.outputs.md }}
+          JSON_PATH: ${{ steps.out.outputs.json }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Create or update issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const title = 'Daily News Filter Result';
+            const body = fs.readFileSync('issue_body.txt', 'utf8');
+
+            const { owner, repo } = context.repo;
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const existing = issues.find(i => i.title === title);
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+              core.info(`Updated issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({ owner, repo, title, body });
+              core.info(`Created issue #${created.data.number}`);
+            }
 
       - name: Upload artifacts (backup)
         uses: actions/upload-artifact@v4

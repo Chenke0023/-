@@ -1,0 +1,17 @@
+[build]
+builder = "nixpacks/builder:v1"
+
+[[builds]]
+  watchCmd = "build-railway"
+  builder = "NIXPACKS_BUILDER"
+
+[deploy]
+  startCommand = "python3 -u batch_process.py"
+
+[env]
+  "OPENAI_API_KEY" = "sk-EjDBhZm5xTqkXfe_ea_iIUpuls7IUT5ZmTTufteiR5qlyHwCO6l0k3Kh1oE"
+  "OPENAI_BASE_URL" = "https://ai.hybgzs.com/v1"
+  "MODEL_NAME" = "gemini-3-flash-preview"
+  "BATCH_SIZE" = "50"
+  "BATCH_DELAY" = "10"
+  "REQUEST_DELAY" = "0.2"

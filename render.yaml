@@ -1,0 +1,29 @@
+services:
+  - type: cron
+    name: news-filter-cron
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python batch_process_render.py
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://ai.hybgzs.com/v1
+      - key: MODEL_NAME
+        value: gemini-3-flash-preview
+      - key: BATCH_SIZE
+        value: 50
+      - key: BATCH_DELAY
+        value: 10
+      - key: REQUEST_DELAY
+        value: 0.2
+      - key: MAX_RETRIES
+        value: 3
+      - key: RETRY_DELAY
+        value: 5
+      - key: DB_PATH
+        value: ./ai-rss-filter/data/rss_data.db
+      - key: PYTHON_VERSION
+        value: 3.11
+    cron: "0 1 * * *"

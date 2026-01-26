@@ -1,0 +1,24 @@
+{
+  "filter_topics": [
+    {
+      "topic": "Social networking",
+      "description": "社交网络"
+    },
+    {
+      "topic": "live streaming",
+      "description": "直播"
+    },
+    {
+      "topic": "TMT acquisitions",
+      "description": "TMT并购"
+    },
+    {
+      "topic": "mobile gaming",
+      "description": "手机游戏"
+    },
+    {
+      "topic": "AI",
+      "description": "人工智能"
+    }
+  ]
+}

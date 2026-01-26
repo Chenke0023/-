@@ -1,6 +1,6 @@
 # AI RSS 新闻过滤器
 
-用 AI 每天自动过滤新闻，只保留你感兴趣的主题（Social networking、直播、TMT并购、手机游戏）。
+用 AI 每天自动过滤新闻，只保留你感兴趣的主题（Social networking、直播、TMT并购、手机游戏、AI）。
 
 ## 功能特点
 
@@ -8,7 +8,7 @@
 - ⏰ 自动运行：每天定时抓取、过滤
 - 📧 邮件通知：结果自动发送到 GitHub Issue，GitHub 邮件通知到你
 - 💰 完全免费：GitHub Actions 免费额度即可运行
-- 🔧 易于配置：JSON 文件管理 RSS 源，轻松增减
+- 🔧 易于配置：JSON 文件管理 RSS 源和过滤主题，轻松增减
 
 ## 如何使用
 
@@ -58,6 +58,52 @@
 
 **默认源**：项目已包含 24 个精选 RSS 源，涵盖科技、金融、VC 等领域。
 
+### 3. 配置过滤主题（增减关键词）
+
+编辑仓库根目录的 `filter_config.json` 文件：
+
+```json
+{
+  "filter_topics": [
+    {
+      "topic": "Social networking",
+      "description": "社交网络"
+    },
+    {
+      "topic": "live streaming",
+      "description": "直播"
+    },
+    {
+      "topic": "TMT acquisitions",
+      "description": "TMT并购"
+    },
+    {
+      "topic": "mobile gaming",
+      "description": "手机游戏"
+    },
+    {
+      "topic": "AI",
+      "description": "人工智能"
+    }
+  ]
+}
+```
+
+**如何添加新主题**：
+1. 在 `filter_topics` 数组中添加一个新对象
+2. 填写 `topic`（主题名称，英文）、`description`（中文描述）
+3. 提交更改到仓库，下次运行会自动使用新主题
+
+**示例：添加"AI"主题**：
+```json
+{
+  "topic": "AI",
+  "description": "人工智能"
+}
+```
+
+**如何删除某个主题**：直接从 `filter_topics` 数组中删除对应的对象。
+
 ### 4. 启用 GitHub Actions 工作流
 
 在你的 Fork 仓库中：
@@ -86,30 +132,13 @@
 
 ## 结果文件
 
-每次运行会生成三个文件：
+每次运行会生成一个文件：
 
 - `相关新闻_YYYYMMDD_HHMMSS.md` - Markdown 格式的新闻列表
-- `filtered_news_YYYYMMDD_HHMMSS.json` - JSON 格式的结构化数据
-- `unknown_news_YYYYMMDD_HHMMSS.json` - 如果有 LLM 速率限制导致未判断的新闻，保存在此文件
 
-这些文件会：
-- 在 Issue 中链接下载
+这个文件会：
+- 在 Issue 正文完整展示
 - 自动上传到 GitHub Actions Artifacts（保留 90 天）
-
-## 修改过滤主题
-
-编辑 `batch_process_railway.py` 文件，找到这段代码：
-
-```python
-instructions = (
-    "请判断以下每条新闻是否与这些主题相关："
-    "Social networking（社交网络）、live streaming（直播）、TMT acquisitions（TMT并购）、mobile gaming（手机游戏）。\n"
-    "请严格按顺序返回一个 JSON 数组，数组长度必须等于输入条目数。\n"
-    "数组元素只能是字符串 'YES' 或 'NO'，不要输出任何解释、代码块或多余文字。"
-)
-```
-
-修改第一行的主题列表即可。
 
 ## 分享给其他人
 
@@ -118,7 +147,8 @@ instructions = (
 1. Fork 你的仓库（或直接克隆）
 2. 按照上述步骤配置他们的 `OPENAI_API_KEY`
 3. （可选）修改 `rss_sources.json` 来定制他们的 RSS 源
-4. 启用 Actions 工作流
+4. （可选）修改 `filter_config.json` 来定制过滤主题
+5. 启用 Actions 工作流
 
 ## 配置说明
 

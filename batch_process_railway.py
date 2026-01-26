@@ -23,6 +23,7 @@ MAX_RETRIES = 3
 RETRY_DELAY = 5
 
 SOURCES_FILE = os.getenv('SOURCES_FILE', 'rss_sources.json')
+FILTER_CONFIG_FILE = os.getenv('FILTER_CONFIG_FILE', 'filter_config.json')
 
 def load_rss_sources():
     sources_file = os.path.join(os.path.dirname(__file__), SOURCES_FILE)
@@ -32,7 +33,16 @@ def load_rss_sources():
             return [s['url'] for s in data['sources'] if s.get('enabled', True)]
     raise FileNotFoundError(f"找不到配置文件: {sources_file}")
 
+def load_filter_topics():
+    config_file = os.path.join(os.path.dirname(__file__), FILTER_CONFIG_FILE)
+    if os.path.exists(config_file):
+        with open(config_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data['filter_topics']
+    raise FileNotFoundError(f"找不到配置文件: {config_file}")
+
 RSS_URLS = load_rss_sources()
+FILTER_TOPICS = load_filter_topics()
 
 feedparser.USER_AGENT = 'Mozilla/5.0 (compatible; RSS-Filter-Railway/1.0)'
 
@@ -62,9 +72,9 @@ def classify_batch(items, client):
             }
         )
 
+    topics_text = "、".join([f"{t['topic']}（{t['description']}）" for t in FILTER_TOPICS])
     instructions = (
-        "请判断以下每条新闻是否与这些主题相关："
-        "Social networking（社交网络）、live streaming（直播）、TMT acquisitions（TMT并购）、mobile gaming（手机游戏）。\n"
+        f"请判断以下每条新闻是否与这些主题相关：{topics_text}。\n"
         "请严格按顺序返回一个 JSON 数组，数组长度必须等于输入条目数。\n"
         "数组元素只能是字符串 'YES' 或 'NO'，不要输出任何解释、代码块或多余文字。"
     )
@@ -312,24 +322,12 @@ def main():
 '''
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    json_file = f"filtered_news_{timestamp}.json"
-    unknown_json_file = f"unknown_news_{timestamp}.json"
     md_file = f"相关新闻_{timestamp}.md"
-
-    with open(json_file, 'w', encoding='utf-8') as f:
-        json.dump(all_relevant, f, ensure_ascii=False, indent=2)
-
-    if all_unknown:
-        with open(unknown_json_file, 'w', encoding='utf-8') as f:
-            json.dump(all_unknown, f, ensure_ascii=False, indent=2)
 
     with open(md_file, 'w', encoding='utf-8') as f:
         f.write(md_content)
 
     print(f"\n✅ 结果已保存:")
-    print(f"   📄 JSON: {json_file}")
-    if all_unknown:
-        print(f"   📄 Unknown JSON: {unknown_json_file}")
     print(f"   📄 Markdown: {md_file}")
 
 if __name__ == "__main__":

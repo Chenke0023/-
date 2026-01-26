@@ -22,32 +22,17 @@ CLASSIFY_BATCH_SIZE = int(os.getenv('CLASSIFY_BATCH_SIZE', '10'))
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 
-RSS_URLS = [
-    "https://contraryresearch.substack.com/feed",
-    "https://www.newsletter.datadrivenvc.io/feed",
-    "https://seekingalpha.com/tag/editors-picks.xml",
-    "https://icemancapital.substack.com/feed",
-    "https://www.ft.com/rss/home",
-    "https://www.levervc.com/feed/",
-    "https://mbideepdives.substack.com/feed",
-    "http://www.technologyreview.com/rss/rss.aspx",
-    "https://www.newcomer.co/feed",
-    "https://cdn.feedcontrol.net/8/1114-wioSIX3uu8MEj.xml",
-    "https://svrgn.substack.com/feed",
-    "https://www.speedwellmemos.com/feed",
-    "https://techcrunch.com/feed/",
-    "https://feeds.content.dowjones.io/public/rss/RSSWSJD",
-    "https://attackcapital.substack.com/feed",
-    "https://ritholtz.com/feed/rss",
-    "https://thegeneralist.substack.com/feed",
-    "https://www.thelastbearstanding.com/feed",
-    "https://newsletter.tidalwaveresearch.com/feed",
-    "http://blog.validea.com/feed/",
-    "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
-    "https://www.appinn.com/feed/",
-    "https://sspai.com/feed",
-    "https://bloombergnew.buzzing.cc/feed.xml",
-]
+SOURCES_FILE = os.getenv('SOURCES_FILE', 'rss_sources.json')
+
+def load_rss_sources():
+    sources_file = os.path.join(os.path.dirname(__file__), SOURCES_FILE)
+    if os.path.exists(sources_file):
+        with open(sources_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return [s['url'] for s in data['sources'] if s.get('enabled', True)]
+    raise FileNotFoundError(f"找不到配置文件: {sources_file}")
+
+RSS_URLS = load_rss_sources()
 
 feedparser.USER_AGENT = 'Mozilla/5.0 (compatible; RSS-Filter-Railway/1.0)'
 

@@ -1,0 +1,124 @@
+{
+  "sources": [
+    {
+      "url": "https://contraryresearch.substack.com/feed",
+      "category": "Tech & Venture",
+      "enabled": true
+    },
+    {
+      "url": "https://www.newsletter.datadrivenvc.io/feed",
+      "category": "VC & Startups",
+      "enabled": true
+    },
+    {
+      "url": "https://seekingalpha.com/tag/editors-picks.xml",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "https://icemancapital.substack.com/feed",
+      "category": "VC & Startups",
+      "enabled": true
+    },
+    {
+      "url": "https://www.ft.com/rss/home",
+      "category": "General News",
+      "enabled": true
+    },
+    {
+      "url": "https://www.levervc.com/feed/",
+      "category": "VC & Startups",
+      "enabled": true
+    },
+    {
+      "url": "https://mbideepdives.substack.com/feed",
+      "category": "Tech & Venture",
+      "enabled": true
+    },
+    {
+      "url": "http://www.technologyreview.com/rss/rss.aspx",
+      "category": "Technology",
+      "enabled": true
+    },
+    {
+      "url": "https://www.newcomer.co/feed",
+      "category": "Tech & Venture",
+      "enabled": true
+    },
+    {
+      "url": "https://cdn.feedcontrol.net/8/1114-wioSIX3uu8MEj.xml",
+      "category": "Tech & Venture",
+      "enabled": true
+    },
+    {
+      "url": "https://svrgn.substack.com/feed",
+      "category": "VC & Startups",
+      "enabled": true
+    },
+    {
+      "url": "https://www.speedwellmemos.com/feed",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "https://techcrunch.com/feed/",
+      "category": "Technology",
+      "enabled": true
+    },
+    {
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSWSJD",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "https://attackcapital.substack.com/feed",
+      "category": "VC & Startups",
+      "enabled": true
+    },
+    {
+      "url": "https://ritholtz.com/feed/rss",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "https://thegeneralist.substack.com/feed",
+      "category": "Tech & Venture",
+      "enabled": true
+    },
+    {
+      "url": "https://www.thelastbearstanding.com/feed",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "https://newsletter.tidalwaveresearch.com/feed",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "http://blog.validea.com/feed/",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+      "category": "Finance",
+      "enabled": true
+    },
+    {
+      "url": "https://www.appinn.com/feed/",
+      "category": "Technology",
+      "enabled": true
+    },
+    {
+      "url": "https://sspai.com/feed",
+      "category": "Technology",
+      "enabled": true
+    },
+    {
+      "url": "https://bloombergnew.buzzing.cc/feed.xml",
+      "category": "Finance",
+      "enabled": true
+    }
+  ]
+}

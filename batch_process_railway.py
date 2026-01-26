@@ -16,7 +16,7 @@ if not OPENAI_API_KEY:
     raise ValueError('OPENAI_API_KEY environment variable is required')
 
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '50'))
-BATCH_DELAY = int(os.getenv('BATCH_DELAY', '10'))
+BATCH_DELAY = int(os.getenv('BATCH_DELAY', '70'))
 REQUEST_DELAY = float(os.getenv('REQUEST_DELAY', '0.2'))
 CLASSIFY_BATCH_SIZE = int(os.getenv('CLASSIFY_BATCH_SIZE', '10'))
 MAX_RETRIES = 3

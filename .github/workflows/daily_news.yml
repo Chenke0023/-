@@ -81,7 +81,6 @@ jobs:
           - Markdown: `{md_path.name}`
           - JSON: `{js_path.name}`
           {unknown_line}- Run: {run_url}
-          - Run: {run_url}
 
           ---
 
@@ -96,30 +95,34 @@ jobs:
           UNKNOWN_PATH: ${{ steps.out.outputs.unknown }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-      - name: Create or update issue
+      - name: Create issue with timestamp
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const title = 'Daily News Filter Result';
+            const now = new Date();
+            const dateStr = now.toLocaleString('zh-CN', { 
+              timeZone: 'Asia/Shanghai', 
+              year: 'numeric', 
+              month: '2-digit', 
+              day: '2-digit', 
+              hour: '2-digit', 
+              minute: '2-digit', 
+              hour12: false 
+            }).replace(/\//g, '-');
+            
+            const title = `Daily News Filter Result - ${dateStr}`;
             const body = fs.readFileSync('issue_body.txt', 'utf8');
-
             const { owner, repo } = context.repo;
-            const issues = await github.paginate(github.rest.issues.listForRepo, {
+
+            const created = await github.rest.issues.create({
               owner,
               repo,
-              state: 'open',
-              per_page: 100,
+              title,
+              body,
+              labels: ['daily-report']
             });
-
-            const existing = issues.find(i => i.title === title);
-            if (existing) {
-              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
-              core.info(`Updated issue #${existing.number}`);
-            } else {
-              const created = await github.rest.issues.create({ owner, repo, title, body });
-              core.info(`Created issue #${created.data.number}`);
-            }
+            core.info(`Created issue #${created.data.number}: ${title}`);
 
       - name: Upload artifacts (backup)
         uses: actions/upload-artifact@v4

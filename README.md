@@ -30,6 +30,8 @@
 
 ### 3. 配置 RSS 源（增减新闻来源）
 
+**[直接在 GitHub 编辑 `rss_sources.json`](rss_sources.json)** ⚡ 快捷方式
+
 编辑仓库根目录的 `rss_sources.json` 文件：
 
 ```json
@@ -60,7 +62,9 @@
 
 ### 3. 配置过滤主题（增减关键词）
 
-编辑仓库根目录的 `filter_config.json` 文件：
+**[直接在 GitHub 编辑 `filter_config.json`](filter_config.json)** ⚡ 快捷方式
+
+或者手动编辑仓库根目录的 `filter_config.json` 文件：
 
 ```json
 {
@@ -89,20 +93,23 @@
 }
 ```
 
-**如何添加新主题**：
-1. 在 `filter_topics` 数组中添加一个新对象
-2. 填写 `topic`（主题名称，英文）、`description`（中文描述）
-3. 提交更改到仓库，下次运行会自动使用新主题
+**如何添加新主题（比如"区块链"）**：
+1. 点击上面的快捷链接或在文件列表中找到 `filter_config.json`
+2. 点击编辑按钮（✏️）
+3. 在 `filter_topics` 数组中添加：
 
-**示例：添加"AI"主题**：
 ```json
 {
-  "topic": "AI",
-  "description": "人工智能"
+  "topic": "Blockchain",
+  "description": "区块链"
 }
 ```
 
-**如何删除某个主题**：直接从 `filter_topics` 数组中删除对应的对象。
+4. 点击 "Commit changes"
+
+**如何删除某个主题**：直接从 `filter_topics` 数组中删除对应的对象即可。
+
+提交后，下次工作流运行会自动使用新的主题列表。
 
 ### 4. 启用 GitHub Actions 工作流
 

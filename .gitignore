@@ -5,11 +5,14 @@ __pycache__/
 # Secrets
 .env
 
+# Legacy directories
+ai-rss-filter/
+
 # Local databases / caches
-ai-rss-filter/data/
-ai-rss-filter/data/cache/
 *.db
+*.sqlite
 
 # Generated outputs
 filtered_news_*.json
+unknown_news_*.json
 相关新闻_*.md

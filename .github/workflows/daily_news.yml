@@ -41,8 +41,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          md=$(ls -1t 相关新闻_*.md | head -n 1)
-          js=$(ls -1t filtered_news_*.json | head -n 1)
+          md=$(ls -1t 相关新闻_*.md 2>/dev/null | head -n 1 || true)
+          js=$(ls -1t filtered_news_*.json 2>/dev/null | head -n 1 || true)
           unk=$(ls -1t unknown_news_*.json 2>/dev/null | head -n 1 || true)
           echo "md=$md" >> "$GITHUB_OUTPUT"
           echo "json=$js" >> "$GITHUB_OUTPUT"

@@ -8,9 +8,9 @@ from datetime import datetime, timedelta
 import feedparser
 from openai import OpenAI
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://ai.hybgzs.com/v1')
-MODEL_NAME = os.getenv('MODEL_NAME', 'gemini-3-flash-preview')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'sk-gTCXpxqNxT9H9D8wq6gaGq6aG2qCliCm')
+OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://aigw-gzgy2.cucloud.cn:8443/v1')
+MODEL_NAME = os.getenv('MODEL_NAME', 'glm-5')
 
 if not OPENAI_API_KEY:
     raise ValueError('OPENAI_API_KEY environment variable is required')

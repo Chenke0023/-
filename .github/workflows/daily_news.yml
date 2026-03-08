@@ -29,8 +29,8 @@ jobs:
       - name: Run filter
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL || 'https://ai.hybgzs.com/v1' }}
-          MODEL_NAME: ${{ secrets.MODEL_NAME || 'gemini-3-flash-preview' }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL || 'https://integrate.api.nvidia.com' }}
+          MODEL_NAME: ${{ secrets.MODEL_NAME || 'moonshotai/kimi-k2-instruct' }}
           BATCH_SIZE: ${{ secrets.BATCH_SIZE || '50' }}
           BATCH_DELAY: ${{ secrets.BATCH_DELAY || '70' }}
           REQUEST_DELAY: ${{ secrets.REQUEST_DELAY || '0.2' }}

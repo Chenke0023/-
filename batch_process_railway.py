@@ -8,9 +8,13 @@ from datetime import datetime, timedelta
 import feedparser
 from openai import OpenAI
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'sk-gTCXpxqNxT9H9D8wq6gaGq6aG2qCliCm')
-OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://aigw-gzgy2.cucloud.cn:8443/v1')
-MODEL_NAME = os.getenv('MODEL_NAME', 'glm-5')
+DEFAULT_OPENAI_API_KEY = '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'
+DEFAULT_OPENAI_BASE_URL = 'https://integrate.api.nvidia.com'
+DEFAULT_MODEL_NAME = 'moonshotai/kimi-k2-instruct'
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', DEFAULT_OPENAI_API_KEY)
+OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', DEFAULT_OPENAI_BASE_URL)
+MODEL_NAME = os.getenv('MODEL_NAME', DEFAULT_MODEL_NAME)
 
 if not OPENAI_API_KEY:
     raise ValueError('OPENAI_API_KEY environment variable is required')
@@ -24,6 +28,36 @@ RETRY_DELAY = 5
 
 SOURCES_FILE = os.getenv('SOURCES_FILE', 'rss_sources.json')
 FILTER_CONFIG_FILE = os.getenv('FILTER_CONFIG_FILE', 'filter_config.json')
+
+def normalize_base_url(base_url):
+    url = (base_url or '').rstrip('/')
+    if not url:
+        return DEFAULT_OPENAI_BASE_URL + '/v1'
+    if url.endswith('/v1'):
+        return url
+    return url + '/v1'
+
+def extract_json_array(raw_text):
+    text = (raw_text or '').strip()
+    if not text:
+        raise ValueError('empty response')
+
+    if text.startswith('```'):
+        lines = text.splitlines()
+        if lines and lines[0].startswith('```'):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == '```':
+            lines = lines[:-1]
+        text = '\n'.join(lines).strip()
+        if text.lower().startswith('json'):
+            text = text[4:].strip()
+
+    start = text.find('[')
+    end = text.rfind(']')
+    if start == -1 or end == -1 or end < start:
+        raise ValueError(f'no json array found in response: {text[:200]}')
+
+    return json.loads(text[start:end + 1])
 
 def load_rss_sources():
     sources_file = os.path.join(os.path.dirname(__file__), SOURCES_FILE)
@@ -95,7 +129,7 @@ def classify_batch(items, client):
             )
 
             raw = response.choices[0].message.content.strip()
-            arr = json.loads(raw)
+            arr = extract_json_array(raw)
             if not isinstance(arr, list) or len(arr) != len(items):
                 return [None for _ in items]
 
@@ -130,9 +164,11 @@ def classify_batch(items, client):
 def main():
     print("🚀 RSS 过滤器 Railway 版本启动中...\n")
 
-    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+    normalized_base_url = normalize_base_url(OPENAI_BASE_URL)
+    client = OpenAI(api_key=OPENAI_API_KEY, base_url=normalized_base_url)
 
     print(f"📊 RSS 源数量: {len(RSS_URLS)}")
+    print(f"🤖 模型配置: {MODEL_NAME} @ {normalized_base_url}")
     print(f"🔄 分批处理: 每批 {BATCH_SIZE} 条，批次间隔 {BATCH_DELAY} 秒\n")
 
     all_entries = []
@@ -263,7 +299,8 @@ def main():
     print(f"   - 相关新闻: {len(all_relevant)}")
     if all_unknown:
         print(f"   - 未能判断: {len(all_unknown)}")
-    print(f"   - 相关比例: {len(all_relevant)/len(unique_entries)*100:.2f}%")
+    relevant_ratio = (len(all_relevant) / len(unique_entries) * 100) if unique_entries else 0
+    print(f"   - 相关比例: {relevant_ratio:.2f}%")
 
     all_relevant.sort(key=lambda x: x['published'], reverse=True)
 
@@ -275,7 +312,7 @@ def main():
 **相关新闻数量**: {len(all_relevant)} 条
 **未能判断数量**: {len(all_unknown)} 条
 **总新闻数**: {len(unique_entries)} 条
-**过滤比例**: {len(all_relevant)/len(unique_entries)*100:.2f}%
+**过滤比例**: {relevant_ratio:.2f}%
 
 ---
 
@@ -308,9 +345,9 @@ def main():
 | 去重后新闻 | {len(unique_entries)} 条 |
 | 相关新闻 | {len(all_relevant)} 条 |
 | 未能判断 | {len(all_unknown)} 条 |
-| 相关比例 | {len(all_relevant)/len(unique_entries)*100:.2f}% |
+| 相关比例 | {relevant_ratio:.2f}% |
 | LLM 模型 | {MODEL_NAME} |
-| API 提供商 | {OPENAI_BASE_URL} |
+| API 提供商 | {normalized_base_url} |
 
 ---
 

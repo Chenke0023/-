@@ -23,10 +23,10 @@
 | Secret 名称 | 说明 | 示例 | 必填 |
 |------------|------|------|------|
 | `OPENAI_API_KEY` | OpenAI 兼容的 API 密钥 | `sk-xxxxx` | ✅ 是 |
-| `OPENAI_BASE_URL` | API 基础 URL | `https://ai.hybgzs.com/v1` | ❌ 否（有默认值） |
-| `MODEL_NAME` | LLM 模型名称 | `gemini-3-flash-preview` | ❌ 否（有默认值） |
+| `OPENAI_BASE_URL` | API 基础 URL | `https://integrate.api.nvidia.com` | ❌ 否（有默认值，会自动补 `/v1`） |
+| `MODEL_NAME` | LLM 模型名称 | `moonshotai/kimi-k2-instruct` | ❌ 否（有默认值） |
 
-> **重要提醒**：如果你用的是第三方的 OpenAI 兼容 API（如本项目默认的 ai.hybgzs.com），请确保你有足够的速率额度。
+> **重要提醒**：如果你用的是第三方的 OpenAI 兼容 API（如本项目默认的 NVIDIA Integrate API），请确保你有足够的速率额度。
 
 ### 3. 配置 RSS 源（增减新闻来源）
 

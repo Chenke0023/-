@@ -5,7 +5,7 @@ import pytest
 from src import config
 from src.filters import is_entry_within_lookback, normalize_news_url
 from src.history import dedupe_key_for_entry
-from src.llm import extract_json_array
+from src.llm import build_classification_prompt, extract_json_array
 
 
 def test_normalize_news_url_strips_tracking_and_lowercases():
@@ -60,6 +60,29 @@ def test_extract_json_array_fenced_json():
 def test_extract_json_array_empty_raises():
     with pytest.raises(ValueError):
         extract_json_array("")
+
+
+def test_build_classification_prompt_accepts_moderate_relevance():
+    topics = [
+        {"topic": "AI", "description": "人工智能"},
+        {"topic": "TMT acquisitions", "description": "TMT并购"},
+    ]
+
+    prompt = build_classification_prompt(
+        [
+            {
+                "title": "Big Tech signs new AI infrastructure partnership",
+                "summary": "The companies will jointly expand model hosting capacity and enterprise distribution.",
+            }
+        ],
+        topics,
+    )
+
+    assert "中度相关也收" in prompt
+    assert "业务、产品、融资、并购、平台策略或产业影响上的关联" in prompt
+    assert "不要求新闻主题必须完全聚焦这些领域" in prompt
+    assert "AI 基础设施/模型/代理" in prompt
+    assert "TMT 领域投融资/并购/资产出售/战略合作" in prompt
 
 
 def test_dedupe_key_prefers_normalized_url():

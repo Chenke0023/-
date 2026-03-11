@@ -97,21 +97,25 @@ jobs:
 
           issues = gh_json(
               [
-                  "api",
-                  "repos/${{ github.repository }}/issues",
-                  "-F",
-                  "state=open",
-                  "-F",
-                  "labels=daily-report",
-                  "-F",
-                  "per_page=30",
+                  "issue",
+                  "list",
+                  "-R",
+                  "${{ github.repository }}",
+                  "--state",
+                  "open",
+                  "--label",
+                  "daily-report",
+                  "--limit",
+                  "30",
+                  "--json",
+                  "createdAt,body",
               ]
           )
 
           url_re = re.compile(r"https?://[^\s\)\]\>\"']+")
           keys = set()
           for it in issues:
-              created_at = it.get("created_at", "")
+              created_at = it.get("createdAt", "")
               if not isinstance(created_at, str) or not created_at:
                   continue
               try:

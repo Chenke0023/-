@@ -26,6 +26,114 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Black format check
+        run: black --check .
+
+      - name: Run tests
+        run: pytest
+
+      - name: Build reported keys for cross-run dedupe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          from datetime import datetime, timedelta, timezone
+          from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+          REPORT_HISTORY_DAYS = int(os.environ.get("REPORT_HISTORY_DAYS", "3"))
+          cutoff = datetime.now(timezone.utc) - timedelta(days=REPORT_HISTORY_DAYS)
+
+          def normalize_news_url(url: str) -> str:
+              raw = (url or "").strip()
+              if not raw:
+                  return ""
+              parsed = urlsplit(raw)
+              query_pairs = []
+              tracking_keys = {
+                  "feature",
+                  "fbclid",
+                  "gclid",
+                  "mc_cid",
+                  "mc_eid",
+                  "mkt_tok",
+                  "ref",
+                  "source",
+                  "spm",
+              }
+              for key, value in parse_qsl(parsed.query, keep_blank_values=True):
+                  lowered = key.lower()
+                  if lowered.startswith("utm_") or lowered in tracking_keys:
+                      continue
+                  query_pairs.append((key, value))
+              path = parsed.path.rstrip("/") or parsed.path
+              return urlunsplit(
+                  (
+                      parsed.scheme.lower(),
+                      parsed.netloc.lower(),
+                      path,
+                      urlencode(query_pairs, doseq=True),
+                      "",
+                  )
+              )
+
+          def key_for_url(url: str) -> str:
+              n = normalize_news_url(url)
+              return f"url:{n}" if n else ""
+
+          def gh_json(args: list[str]) -> list[dict]:
+              out = subprocess.check_output(["gh", *args], text=True)
+              return json.loads(out)
+
+          issues = gh_json(
+              [
+                  "api",
+                  "repos/${{ github.repository }}/issues",
+                  "-F",
+                  "state=open",
+                  "-F",
+                  "labels=daily-report",
+                  "-F",
+                  "per_page=30",
+              ]
+          )
+
+          url_re = re.compile(r"https?://[^\s\)\]\>\"']+")
+          keys = set()
+          for it in issues:
+              created_at = it.get("created_at", "")
+              if not isinstance(created_at, str) or not created_at:
+                  continue
+              try:
+                  dt = datetime.fromisoformat(created_at.replace("Z", "+00:00")).astimezone(timezone.utc)
+              except ValueError:
+                  continue
+              if dt < cutoff:
+                  continue
+              body = it.get("body") or ""
+              if not isinstance(body, str):
+                  continue
+              for url in url_re.findall(body):
+                  k = key_for_url(url)
+                  if k:
+                      keys.add(k)
+
+          payload = {"generated_at": datetime.now(timezone.utc).isoformat(), "keys": sorted(keys)}
+          with open("reported_keys.json", "w", encoding="utf-8") as f:
+              json.dump(payload, f, ensure_ascii=False, indent=2)
+          print(f"Built {len(keys)} reported keys")
+          PY
+
       - name: Run filter
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -34,6 +142,7 @@ jobs:
           BATCH_SIZE: ${{ secrets.BATCH_SIZE || '50' }}
           BATCH_DELAY: ${{ secrets.BATCH_DELAY || '70' }}
           REQUEST_DELAY: ${{ secrets.REQUEST_DELAY || '0.2' }}
+          REPORTED_KEYS_FILE: reported_keys.json
         run: python batch_process_railway.py
 
       - name: Pick output files
